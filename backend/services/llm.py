@@ -1,7 +1,7 @@
 import requests
 from django.conf import settings
 
-def call_llm(prompt: str) -> str:
+def call_llm(prompt: str, temperature: float = 0.2, top_p: float = 0.9) -> str:
     
     response = requests.post(
         f"{settings.OLLAMA_BASE_URL}/api/generate",
@@ -10,8 +10,8 @@ def call_llm(prompt: str) -> str:
             "prompt": prompt,
             "stream": False,
             "options": {
-                "temperature": 0.2,   #low for low creativity 
-                "top_p": 0.9
+                "temperature": temperature,
+                "top_p": top_p
             }
         },
         timeout=400

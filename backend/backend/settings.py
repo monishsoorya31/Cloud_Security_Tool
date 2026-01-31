@@ -133,8 +133,6 @@ VECTOR_DB_PATH = os.getenv(
     "VECTOR_DB_PATH",
     str(BASE_DIR / "vectorstore")
 )
-import os
-
 OLLAMA_BASE_URL = os.getenv(
     "OLLAMA_BASE_URL",
     "http://localhost:11434"
@@ -155,3 +153,5 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_HEADERS = ['*']
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+RAG_SIMILARITY_THRESHOLD = 0.8
