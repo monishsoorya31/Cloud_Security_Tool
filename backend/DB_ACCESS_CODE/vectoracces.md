@@ -51,7 +51,7 @@ for m in data["metadatas"]:
 # ================================
 # 7. Metadata-only filter (WORKING)
 # ================================
-aws_docs = collection.get(
+gcp_data = collection.get(
     where={"provider": "gcp"},
     limit=5
 )

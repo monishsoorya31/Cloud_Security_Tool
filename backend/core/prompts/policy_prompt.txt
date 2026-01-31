@@ -9,7 +9,6 @@ based on the user question and available context.
 - create any commands
 - tell from your knowledge
 
-
 You MUST:
 - Stay accurate and conservative.
 - Provide best practices even if not explicitly stated in the context.
@@ -50,8 +49,8 @@ Provide a brief explanation of the security goal and why it matters.
 - Describe audit logging and monitoring recommendations.
 - Include gcloud CLI commands if applicable same as recommended<if Include in the  or context>.
 
-### Summary Table
-Provide a concise summarizing:
+### Summary
+Provide a Summary:
 
 --------------------------------------------------
 
