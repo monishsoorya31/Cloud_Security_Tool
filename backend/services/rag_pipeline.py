@@ -4,15 +4,32 @@ from services.reasoning import build_context
 from services.query_expander import expand_query_for_security
 from django.conf import settings
 
-# ✅ Use absolute path from settings
-PROMPT_PATH = settings.BASE_DIR / "core/prompts/policy_prompt.txt"
+# ✅ Prompt template paths
+PROMPT_DIR = settings.BASE_DIR / "core/prompts"
+PROMPT_TEMPLATES = {
+    "gcp": PROMPT_DIR / "policy_prompt_gcp.txt",
+    "aws": PROMPT_DIR / "policy_prompt_aws.txt",
+    "azure": PROMPT_DIR / "policy_prompt_azure.txt",
+}
 
-# ✅ Load prompt once (Cache it)
-try:
-    PROMPT_TEMPLATE = PROMPT_PATH.read_text()
-except FileNotFoundError:
-    PROMPT_TEMPLATE = ""
-    print(f"⚠️ Warning: Prompt file not found at {PROMPT_PATH}")
+def get_prompt_template(provider: str | None = None) -> str:
+    """
+    Load the appropriate prompt template based on cloud provider.
+    Raises ValueError if provider is not specified or unknown.
+    """
+    if not provider:
+        raise ValueError("Provider parameter is required. Please specify 'gcp', 'aws', or 'azure'.")
+    
+    provider_key = provider.lower()
+    template_path = PROMPT_TEMPLATES.get(provider_key)
+    
+    if not template_path:
+        raise ValueError(f"Unknown provider '{provider}'. Supported providers: {', '.join(PROMPT_TEMPLATES.keys())}")
+    
+    try:
+        return template_path.read_text()
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Prompt template not found at {template_path}")
 
 SIMILARITY_SCORE_THRESHOLD = settings.RAG_SIMILARITY_THRESHOLD
 
@@ -48,7 +65,8 @@ def answer_query(question: str, provider: str | None = None, top_k: int = 5):
 
     context = build_context(good_chunks)
 
-    prompt_template = PROMPT_TEMPLATE
+    # ✅ Load provider-specific prompt template
+    prompt_template = get_prompt_template(provider)
 
     final_prompt = prompt_template.format(
         context=context,

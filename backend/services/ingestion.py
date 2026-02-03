@@ -4,56 +4,153 @@ from bs4 import BeautifulSoup
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.document_loaders import RecursiveUrlLoader
+# from langchain_community.document_loaders import RecursiveUrlLoader
+import scrapy
+from scrapy.crawler import CrawlerRunner
+from crochet import setup, wait_for
+
+setup()
 
 from apps.documents.models import Document
 from django.conf import settings
 
-def fetch_and_clean_text(url: str, max_depth: int = 2) -> str:
-    """
-    Recursively fetches pages using RecursiveUrlLoader
-    and extracts ONLY clean, visible article text.
-    """
+class CustomSpider(scrapy.Spider):
+    name = "custom_spider"
 
-    loader = RecursiveUrlLoader(
-        url=url,
-        max_depth=max_depth,
-    )
+    def __init__(self, url, max_depth=2, *args, **kwargs):
+        super(CustomSpider, self).__init__(*args, **kwargs)
+        self.start_urls = [url]
+        self.max_depth = max_depth
+        self.results = []
 
-    documents = loader.load()
-    cleaned_pages = []
+    def parse(self, response):
+        if response.status != 200:
+            return
 
-    for doc in documents:
-        html = doc.page_content
-        if not html:
-            continue
-
-        soup = BeautifulSoup(html, "html.parser")
-
+        # Extract text content (similar to the previous BeautifulSoup logic but more direct)
+        soup = BeautifulSoup(response.text, "html.parser")
+        
         # Remove non-content / UI / devsite junk
         for tag in soup([
-            "script",
-            "style",
-            "nav",
-            "footer",
-            "header",
-            "svg",
-            "img",
-            "devsite-toc",
-            "devsite-actions",
-            "noscript",
-            "aside",
+            "script", "style", "nav", "footer", "header", "svg", "img",
+            "devsite-toc", "devsite-actions", "noscript", "aside",
         ]):
             tag.decompose()
 
         text = soup.get_text(separator=" ")
         text = " ".join(text.split())
 
-        # keep only meaningful body text
         if len(text) > 200:
-            cleaned_pages.append(text)
+            self.results.append(text)
 
-    return "\n\n".join(cleaned_pages)
+        # Handle depth - this is a simplified version of recursion
+        if self.max_depth > 0:
+            for link in response.css('a::attr(href)').getall():
+                yield response.follow(link, self.parse, cb_kwargs={'depth': 1})
+
+@wait_for(timeout=60.0)
+def run_spider(url, max_depth=2):
+    runner = CrawlerRunner()
+    spider_instance = CustomSpider(url=url, max_depth=max_depth)
+    deferred = runner.crawl(CustomSpider, url=url, max_depth=max_depth)
+    
+    # This is a bit tricky with CrawlerRunner to get the instance results.
+    # Alternatively, we can use a signal or a more standard Scrapy pipeline, 
+    # but for simplicity in a single file:
+    return deferred
+
+# Harder to get data back from CrawlerRunner deferred directly into the return value without more boilerplate.
+# Let's adjust the implementation to be more robust for getting results back.
+
+class IngestionSpider(scrapy.Spider):
+    name = "ingestion_spider"
+
+    def __init__(self, url, max_depth=2, results_list=None, *args, **kwargs):
+        super(IngestionSpider, self).__init__(*args, **kwargs)
+        self.start_urls = [url]
+        self.max_depth = max_depth
+        self.results_list = results_list if results_list is not None else []
+        
+        # Keep spider on the same domain
+        from urllib.parse import urlparse
+        domain = urlparse(url).netloc
+        if domain:
+            self.allowed_domains = [domain]
+
+    def parse(self, response):
+        print(f"ℹ️ Scrapy parsing {response.url}, status: {response.status}", flush=True)
+        # Similar cleaning logic as before
+        soup = BeautifulSoup(response.text, "html.parser")
+        for tag in soup([
+            "script", "style", "nav", "footer", "header", "svg", "img", 
+            "devsite-toc", "devsite-actions", "noscript", "aside",
+            "button", "form", "label", "input", "textarea"
+        ]):
+            tag.decompose()
+        
+        text = " ".join(soup.get_text(separator=" ").split())
+        print(f"ℹ️ Extracted {len(text)} characters from {response.url}", flush=True)
+        if len(text) > 200: 
+            # Store as tuple (url, text) for stable sorting later
+            self.results_list.append((response.url, text))
+
+        # Follow links recursively (Scrapy handles DEPTH_LIMIT automatically)
+        for href in response.css("a::attr(href)").getall():
+            yield response.follow(href, self.parse)
+
+@wait_for(timeout=900.0)
+def scrape_with_scrapy(url, max_depth=2):
+    results = []
+    runner = CrawlerRunner(settings={
+        'DEPTH_LIMIT': max_depth,
+        'LOG_LEVEL': 'INFO',
+        'TWISTED_REACTOR': 'twisted.internet.epollreactor.EPollReactor',
+        'ROBOTSTXT_OBEY': False,
+        'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'CLOSESPIDER_PAGECOUNT': 100,
+    })
+    deferred = runner.crawl(IngestionSpider, url=url, max_depth=max_depth, results_list=results)
+    deferred.addCallback(lambda _: results)
+    return deferred
+
+def fetch_and_clean_text(url: str, max_depth: int = 2) -> str:
+    """
+    Fetched pages using Scrapy and extracts clean text.
+    Old RecursiveUrlLoader logic is commented out.
+    """
+    # loader = RecursiveUrlLoader(
+    #     url=url,
+    #     max_depth=max_depth,
+    # )
+    # documents = loader.load()
+    # cleaned_pages = []
+    # for doc in documents:
+    #     html = doc.page_content
+    #     if not html:
+    #         continue
+    #     soup = BeautifulSoup(html, "html.parser")
+    #     for tag in soup(["script", "style", "nav", "footer", "header", "svg", "img", "devsite-toc", "devsite-actions", "noscript", "aside"]):
+    #         tag.decompose()
+    #     text = soup.get_text(separator=" ")
+    #     text = " ".join(text.split())
+    #     if len(text) > 200:
+    #         cleaned_pages.append(text)
+    # return "\n\n".join(cleaned_pages)
+
+    cleaned_pages_data = scrape_with_scrapy(url, max_depth)
+    print(f"ℹ️ Scraped {len(cleaned_pages_data)} pages from {url}", flush=True)
+    
+    # Sort by URL to ensure stable hash regardless of Scrapy traversal order
+    cleaned_pages_data.sort(key=lambda x: x[0])
+    
+    # Debug: Log first and last URLs to verify sorting
+    if cleaned_pages_data:
+        print(f"🔍 First URL: {cleaned_pages_data[0][0]}", flush=True)
+        print(f"🔍 Last URL: {cleaned_pages_data[-1][0]}", flush=True)
+    
+    # Extract only the text for joining
+    texts = [item[1] for item in cleaned_pages_data]
+    return "\n\n".join(texts)
 
 def generate_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -79,12 +176,31 @@ def get_vectorstore():
 def is_valid_doc_text(text: str) -> bool:
     if not text:
         return False
-    if len(text) < 120:
+    # Filter out very short chunks
+    if len(text) < 150: 
         return False
+    # Filter out chunks that look like HTML entities or noise
     if text.count("&quot;") > 3:
         return False
-    if "Grow your career" in text:
-        return False
+    
+    # Filter out common UI/Boilerplate strings
+    noise_patterns = [
+        "Grow your career",
+        "page help you?",
+        "Thanks for letting us know",
+        "Was this page helpful?",
+        "Tell us what we did right",
+        "privacy policy",
+        "terms of service",
+        "cookie settings",
+        "sign in",
+        "sign up",
+    ]
+    
+    for pattern in noise_patterns:
+        if pattern.lower() in text.lower():
+            return False
+            
     return True
 
 def ingest_document(title: str, url: str, provider: str, version: str = None):
@@ -92,10 +208,11 @@ def ingest_document(title: str, url: str, provider: str, version: str = None):
     raw_text = fetch_and_clean_text(url)
 
     if not raw_text:
-        print(f"⚠️ No content fetched from {url}")
+        print(f"⚠️ No content fetched from {url}", flush=True)
         return
 
     content_hash = generate_hash(raw_text)
+    print(f"ℹ️ Generated hash {content_hash} for {len(raw_text)} chars from {url}", flush=True)
 
     # 2️⃣ DB metadata
     doc, created = Document.objects.get_or_create(
@@ -123,11 +240,18 @@ def ingest_document(title: str, url: str, provider: str, version: str = None):
     ]
 
     if not valid_chunks:
-        print(f"⚠️ No useful chunks found for {url}")
+        print(f"⚠️ No useful chunks found for {url}", flush=True)
         return
 
-     # 6️⃣ Embed (BATCH INSERT FIX)
+      # 6️⃣ Embed (CLEANUP + BATCH INSERT)
     vectorstore = get_vectorstore()
+
+    # Explicitly clear old chunks for this source to prevent "ghost" data if new scan is smaller
+    try:
+        print(f"🧹 Cleaning up old chunks for {url}...", flush=True)
+        vectorstore.delete(where={"source": url})
+    except Exception as e:
+        print(f"⚠️ Cleanup failed (normal if first time): {e}", flush=True)
 
     try:
         BATCH_SIZE = 1000  # ✅ safe value (can keep 500 also)
@@ -157,10 +281,10 @@ def ingest_document(title: str, url: str, provider: str, version: str = None):
             )
 
 
-            print(f"✅ Inserted {min(i + BATCH_SIZE, len(valid_chunks))}/{len(valid_chunks)} chunks")
+            print(f"✅ Inserted {min(i + BATCH_SIZE, len(valid_chunks))}/{len(valid_chunks)} chunks", flush=True)
 
     except Exception as e:
-        print(f"❌ Vector insertion failed: {e}")
+        print(f"❌ Vector insertion failed: {e}", flush=True)
         return
 
 
@@ -169,4 +293,4 @@ def ingest_document(title: str, url: str, provider: str, version: str = None):
     doc.is_indexed = True
     doc.save()
 
-    print(f"✅ Ingested {len(valid_chunks)} chunks from {url}")
+    print(f"✅ Ingested {len(valid_chunks)} chunks from {url}", flush=True)
