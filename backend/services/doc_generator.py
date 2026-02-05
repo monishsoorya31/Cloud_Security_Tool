@@ -1,6 +1,6 @@
 from datetime import datetime
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 
@@ -17,8 +17,14 @@ def add_structured_answer(doc: Document, answer_text: str):
         if not line:
             continue
 
+        # Convert #### headings to DOCX Heading level 3 (Light Gray)
+        if line.startswith("#### "):
+            heading_text = line.replace("#### ", "").strip()
+            h = doc.add_heading(heading_text, level=3)
+            if h.runs:
+                h.runs[0].font.color.rgb = RGBColor(128, 128, 128)
         # Convert ### headings to DOCX Heading level 2
-        if line.startswith("### "):
+        elif line.startswith("### "):
             heading_text = line.replace("### ", "").strip()
             doc.add_heading(heading_text, level=2)
         else:

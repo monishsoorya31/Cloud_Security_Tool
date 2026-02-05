@@ -12,6 +12,13 @@ export default function RagPage() {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleAsk();
+    }
+  };
+
   // ✅ Ask AI (only once)
   const handleAsk = async () => {
     if (!query.trim()) return;
@@ -38,33 +45,33 @@ export default function RagPage() {
 
   // ✅ Download Report (NO LLM call again)
   const handleDownload = async () => {
-  if (!result?.answer) {
-    setError("First click Ask AI, then download the report.");
-    return;
-  }
+    if (!result?.answer) {
+      setError("First click Ask AI, then download the report.");
+      return;
+    }
 
-  setDownloading(true);
-  setError("");
+    setDownloading(true);
+    setError("");
 
-  try {
-    await downloadRagReport({
-      title: "Cloud Security RAG Report",
-      url: window.location.href,
-      provider: provider,
+    try {
+      await downloadRagReport({
+        title: "Cloud Security RAG Report",
+        url: window.location.href,
+        provider: provider,
 
-      // ✅ REQUIRED
-      query: query,              // from textarea state
-      answer: result.answer,     // from result
-      sources: result.sources || []
-    });
-  } catch (err) {
-    console.log("Download error:", err);
-    console.log("Backend response:", err?.response);
-    setError("Failed to download report");
-  } finally {
-    setDownloading(false);
-  }
-};
+        // ✅ REQUIRED
+        query: query,              // from textarea state
+        answer: result.answer,     // from result
+        sources: result.sources || []
+      });
+    } catch (err) {
+      console.log("Download error:", err);
+      console.log("Backend response:", err?.response);
+      setError("Failed to download report");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const uniqueSources = result?.sources
     ? Array.from(new Map(result.sources.map((s) => [s.source, s])).values())
@@ -80,6 +87,7 @@ export default function RagPage() {
         placeholder="Ask a cloud security question..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={handleKeyDown}
       />
 
       <div className="flex gap-4 flex-wrap items-center">

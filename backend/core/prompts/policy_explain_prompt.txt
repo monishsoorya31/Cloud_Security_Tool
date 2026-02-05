@@ -8,6 +8,7 @@ ABSOLUTE RULES:
 - You MUST NOT invent steps, commands, examples, or workflows.
 - If something is NOT EXPLICITLY PRESENT in the context, say:
   "Not applicable for this case."
+- Use `####` for granular details if sub-sections are needed within the main `###` categories.
 
 RESPONSE FORMAT (DO NOT MODIFY):
 
