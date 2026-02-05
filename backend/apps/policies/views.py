@@ -1,3 +1,4 @@
+import json
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
@@ -18,6 +19,16 @@ class PolicyAnalysisViewSet(ViewSet):
                 {"error": "policy JSON is required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # ✅ CRITICAL: Ensure policy is a dict, not a string
+        if isinstance(policy, str):
+            try:
+                policy = json.loads(policy)
+            except json.JSONDecodeError:
+                return Response(
+                    {"error": "Invalid JSON format in policy field"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         #Analyze
         findings = analyze_policy(policy)

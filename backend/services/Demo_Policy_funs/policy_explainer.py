@@ -19,7 +19,7 @@ def explain_finding(finding: dict, provider: str = "aws"):
     )
 
     context = "\n\n".join(
-        doc["content"] for doc in docs
+        doc["page_content"] for doc in docs
     )
 
     prompt = PROMPT_PATH.read_text().format(
@@ -27,7 +27,8 @@ def explain_finding(finding: dict, provider: str = "aws"):
         severity=severity,
         reason=reason,
         recommendation=recommendation,
-        context=context
+        context=context,
+        question=issue
     )
 
     explanation = call_llm(prompt)
