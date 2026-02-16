@@ -3,7 +3,6 @@ from docx import Document
 from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-
 def add_structured_answer(doc: Document, answer_text: str):
     """
     Parses LLM response and converts markdown-style headings
@@ -31,13 +30,13 @@ def add_structured_answer(doc: Document, answer_text: str):
             p = doc.add_paragraph(line)
             p.paragraph_format.space_after = Pt(8)
 
-
 def build_docx(llm_response: dict) -> Document:
     doc = Document()
 
     # -------------------------
     # TITLE
     # -------------------------
+
     title = doc.add_heading(
         "Tivona Cloud Security Analysis Report",
         level=0
@@ -94,9 +93,6 @@ def build_docx(llm_response: dict) -> Document:
     note.runs[0].font.size = Pt(9)
 
     return doc
-
-
-
 
 
 # import os

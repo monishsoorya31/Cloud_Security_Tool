@@ -3,7 +3,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from django.conf import settings
 
 
-
 def get_vectorstore():
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
@@ -29,7 +28,6 @@ def semantic_search(query: str, top_k: int = 5, provider: str | None = None):
         filter=filters if filters else None
     )
 
-    # results = [(doc, score), (doc, score), ...]
     return [
         {
             "page_content": doc.page_content,

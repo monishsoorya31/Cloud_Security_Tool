@@ -1,5 +1,6 @@
 import hashlib
 from bs4 import BeautifulSoup
+import urllib.parse
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
@@ -79,16 +80,42 @@ class IngestionSpider(scrapy.Spider):
 
     def parse(self, response):
         print(f"ℹ️ Scrapy parsing {response.url}, status: {response.status}", flush=True)
-        # Similar cleaning logic as before
         soup = BeautifulSoup(response.text, "html.parser")
+
+        # 1. Detect if this is an AWS landing page (uses hidden XML for content)
+        xml_content = ""
+        xml_input = soup.find('input', id='landing-page-xml')
+        if xml_input and xml_input.get('value'):
+            try:
+                decoded_xml = urllib.parse.unquote(xml_input.get('value'))
+                xml_soup = BeautifulSoup(decoded_xml, "xml")
+                # Extract text from the decoded XML
+                xml_content = xml_soup.get_text(separator=" ")
+                print(f"ℹ️ Decoded AWS landing-page-xml: {len(xml_content)} characters", flush=True)
+            except Exception as e:
+                print(f"⚠️ Failed to decode AWS landing-page-xml: {e}", flush=True)
+
+        # 2. Refine cleaning and extraction
+        # Don't decompose all inputs, as AWS uses them for content metadata
         for tag in soup([
             "script", "style", "nav", "footer", "header", "svg", "img", 
             "devsite-toc", "devsite-actions", "noscript", "aside",
-            "button", "form", "label", "input", "textarea"
+            "button", "form", "label", "textarea"
         ]):
             tag.decompose()
-        
-        text = " ".join(soup.get_text(separator=" ").split())
+
+        # Try specific content selectors first for better precision
+        main_content = soup.find(id='main-col') or soup.find(class_='awsdocs-content') or soup.find('main')
+        if main_content:
+            text = main_content.get_text(separator=" ")
+        else:
+            text = soup.get_text(separator=" ")
+
+        # Combine with XML content if found
+        if xml_content:
+            text = f"{text}\n\n{xml_content}"
+
+        text = " ".join(text.split())
         print(f"ℹ️ Extracted {len(text)} characters from {response.url}", flush=True)
         if len(text) > 200: 
             # Store as tuple (url, text) for stable sorting later
