@@ -1,8 +1,10 @@
 from services.retriever import semantic_search
 from services.llm import call_llm
+from services.deliberation import deliberate_answer
 from services.reasoning import build_context
 from services.query_expander import expand_query_for_security
 from django.conf import settings
+import json
 
 # ✅ Prompt template paths
 PROMPT_DIR = settings.BASE_DIR / "core/prompts"
@@ -35,16 +37,27 @@ SIMILARITY_SCORE_THRESHOLD = settings.RAG_SIMILARITY_THRESHOLD
 
 
 def answer_query(question: str, provider: str | None = None, top_k: int = 5):
-    #expaned query for best retrival
+    """Sync version of answer_query for standard requests."""
+    gen = answer_query_stream(question, provider, top_k)
+    sources = []
+    final_answer = ""
+    
+    for chunk in gen:
+        data = json.loads(chunk)
+        if data.get("phase") == "Metadata":
+            sources = data.get("sources", [])
+        if data.get("phase") == "Arbiter" and data.get("status") == "Completed":
+            final_answer = data.get("content", "")
+            
+    return {
+        "answer": final_answer.strip() or "⚠️ Failed to generate a refined answer.",
+        "sources": sources
+    }
+
+def answer_query_stream(question: str, provider: str | None = None, top_k: int = 5):
+    """Generator version of answer_query for streaming requests."""
+    # expanded query for best retrieval
     expanded_query = expand_query_for_security(question, provider)
-
-    if expanded_query.strip() != question.strip():
-        print("✅ Query Expanded")
-    else:
-        print("⚠️ Query NOT Expanded")
-
-    print("Original:", question)
-    print("Expanded:", expanded_query)
 
     # ✅ Semantic search
     retrieved_chunks = semantic_search(
@@ -56,26 +69,19 @@ def answer_query(question: str, provider: str | None = None, top_k: int = 5):
     # ✅ Keep only relevant chunks based on score
     good_chunks = [c for c in retrieved_chunks if c.get("score", 999) <= SIMILARITY_SCORE_THRESHOLD]
 
-    # ✅ If nothing relevant, don't call LLM
+    # ✅ If nothing relevant, return early
     if not good_chunks:
-        return {
-            "answer": "⚠️ I couldn't find anything related to your question in the uploaded documents. Please ask a valid cloud/IAM/security-related question.",
-            "sources": []
-        }
+        msg = "⚠️ I couldn't find anything related to your question in the uploaded documents. Please ask a valid cloud/IAM/security-related question."
+        yield json.dumps({"error": msg}) + "\n"
+        return
 
     context = build_context(good_chunks)
+    sources = [chunk["metadata"] for chunk in good_chunks]
 
-    # ✅ Load provider-specific prompt template
-    prompt_template = get_prompt_template(provider)
+    # Yield metadata first
+    yield json.dumps({"phase": "Metadata", "sources": sources}) + "\n"
 
-    final_prompt = prompt_template.format(
-        context=context,
-        question=question
-    )
-
-    answer = call_llm(final_prompt)
-
-    return {
-        "answer": answer.strip(),
-        "sources": [chunk["metadata"] for chunk in good_chunks]
-    }
+    # ✅ Multi-Agent Deliberation Flow
+    deliberation_gen = deliberate_answer(question, context, provider)
+    for chunk in deliberation_gen:
+        yield chunk

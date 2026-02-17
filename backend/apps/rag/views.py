@@ -1,15 +1,16 @@
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
+from django.http import FileResponse, StreamingHttpResponse
+import json
+import re
 
-from services.rag_pipeline import answer_query
+from services.rag_pipeline import answer_query, answer_query_stream
 from services.doc_generator import build_docx
 
 from datetime import datetime
 from io import BytesIO
-from django.http import FileResponse
-
-import re
 
 
 SMALL_TALK = {
@@ -83,6 +84,32 @@ class RAGQueryViewSet(ViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=False, methods=["post"])
+    def stream(self, request):
+        try:
+            query = request.data.get("query")
+            provider = request.data.get("provider")
+            top_k = int(request.data.get("top_k", 5))
+
+            if not query:
+                return Response({"error": "query is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            if is_small_talk(query):
+                def small_talk_gen():
+                    yield json.dumps({
+                        "phase": "SmallTalk",
+                        "status": "Done",
+                        "content": "Hi 👋 I’m your Cloud Security Assistant. Ask me about IAM, policies, roles, Terraform, AWS/GCP/Azure security."
+                    }) + "\n"
+                return StreamingHttpResponse(small_talk_gen(), content_type="application/x-ndjson")
+
+            return StreamingHttpResponse(
+                answer_query_stream(question=query, provider=provider, top_k=top_k),
+                content_type="application/x-ndjson"
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class RAGReportViewSet(ViewSet):
     def create(self, request):
@@ -109,6 +136,5 @@ class RAGReportViewSet(ViewSet):
                 filename=filename,
                 content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
