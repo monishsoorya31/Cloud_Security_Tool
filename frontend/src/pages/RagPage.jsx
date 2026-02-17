@@ -13,6 +13,7 @@ export default function RagPage() {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
   const [deliberationLog, setDeliberationLog] = useState([]);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // t(darkClass, lightClass) — inline theme helper
   const t = (d, l) => (dark ? d : l);
@@ -325,8 +326,20 @@ export default function RagPage() {
                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${loading ? "bg-indigo-500 animate-ping" : deliberationLog.length > 0 ? "bg-emerald-500" : t("bg-gray-700", "bg-gray-300")}`}></div>
                   <span className={`text-xs font-bold uppercase tracking-wider ${t("text-gray-400", "text-gray-500")}`}>Agent Protocol Feed</span>
                 </div>
-                {loading && <span className={`text-[10px] font-bold animate-pulse uppercase tracking-widest ${t("text-indigo-400", "text-indigo-500")}`}>Live</span>}
-                {!loading && deliberationLog.length > 0 && <span className={`text-[10px] font-bold uppercase tracking-widest ${t("text-emerald-500", "text-emerald-600")}`}>Complete</span>}
+                <div className="flex items-center gap-3">
+                  {loading && <span className={`text-[10px] font-bold animate-pulse uppercase tracking-widest ${t("text-indigo-400", "text-indigo-500")}`}>Live</span>}
+                  {!loading && deliberationLog.length > 0 && <span className={`text-[10px] font-bold uppercase tracking-widest ${t("text-emerald-500", "text-emerald-600")}`}>Complete</span>}
+                  <button
+                    onClick={() => setIsFullScreen(true)}
+                    className={`p-1.5 rounded-lg transition-colors ${t("hover:bg-gray-800 text-gray-400 hover:text-gray-200", "hover:bg-gray-100 text-gray-400 hover:text-gray-600")}`}
+                    title="Expand to Full Screen"
+                    aria-label="Expand to Full Screen"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Feed Body */}
@@ -409,6 +422,70 @@ export default function RagPage() {
         </div>
 
       </div>
+
+      {/* ─── Full Screen Overlay ─── */}
+      {isFullScreen && (
+        <div className={`fixed inset-0 z-50 flex flex-col ${t("bg-gray-950", "bg-slate-50")}`}>
+          {/* Header */}
+          <div className={`px-6 py-4 border-b flex items-center justify-between ${t("border-gray-800 bg-gray-900", "border-gray-200 bg-white shadow-sm")}`}>
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${t("bg-gray-800", "bg-indigo-50")}`}>
+                <svg className={`w-5 h-5 ${t("text-indigo-400", "text-indigo-600")}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className={`text-lg font-bold tracking-tight ${t("text-white", "text-gray-900")}`}>Security Council Deliberation</h2>
+                <p className={`text-xs font-medium ${t("text-gray-400", "text-gray-500")}`}>Detailed Protocol Transcript</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsFullScreen(false)}
+              className={`p-2 rounded-lg transition-colors ${t("hover:bg-gray-800 text-gray-400 hover:text-gray-200", "hover:bg-gray-100 text-gray-500 hover:text-gray-900")}`}
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-6">
+            <div className="max-w-5xl mx-auto space-y-6">
+              {deliberationLog.length === 0 ? (
+                <div className="text-center py-20">
+                  <p className={`text-sm ${t("text-gray-500", "text-gray-400")}`}>No details available yet.</p>
+                </div>
+              ) : (
+                deliberationLog.map((log, idx) => (
+                  <div
+                    key={idx}
+                    className={`rounded-2xl border overflow-hidden ${t("border-gray-800 bg-gray-900/50", "border-gray-200 bg-white")}`}
+                  >
+                    <div className={`px-6 py-4 border-b flex items-center justify-between ${t("border-gray-800", "border-gray-100")}`}>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${phaseBg[log.phase]} ${phaseBorder[log.phase]} ${phaseText[log.phase]}`}>
+                          {log.phase}
+                        </span>
+                        {log.status && (
+                          <span className={`text-xs font-medium ${t("text-gray-500", "text-gray-400")}`}>
+                            {log.status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className={`font-mono text-sm leading-relaxed whitespace-pre-wrap ${t("text-gray-300", "text-gray-700")}`}>
+                        {log.content || <span className="italic opacity-50">Thinking...</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

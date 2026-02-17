@@ -82,6 +82,13 @@ def answer_query_stream(question: str, provider: str | None = None, top_k: int =
     yield json.dumps({"phase": "Metadata", "sources": sources}) + "\n"
 
     # ✅ Multi-Agent Deliberation Flow
-    deliberation_gen = deliberate_answer(question, context, provider)
+    prompt_template = None
+    if provider:
+        try:
+            prompt_template = get_prompt_template(provider)
+        except Exception:
+            pass # Fallback to default behavior if template fails
+
+    deliberation_gen = deliberate_answer(question, context, provider, prompt_template=prompt_template)
     for chunk in deliberation_gen:
         yield chunk

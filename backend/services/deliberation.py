@@ -12,7 +12,7 @@ AGENTS = {
     "Arbiter": "llama3.2:3b"
 }
 
-def deliberate_answer(question: str, context: str, provider: str | None = None):
+def deliberate_answer(question: str, context: str, provider: str | None = None, prompt_template: str | None = None):
     """
     Generator that orchestrates a multi-agent deliberation process with token-level streaming.
     Yields JSON strings representing the current phase, status, and incremental content (deltas).
@@ -87,24 +87,49 @@ def deliberate_answer(question: str, context: str, provider: str | None = None):
 
     # Stage 4: Arbiter
     yield json.dumps({ "phase": "Arbiter", "status": "Finalizing Outcome..." }) + "\n"
-    arbiter_prompt = f"""
-    You are the Final Arbiter. Consider the Analyst's summary, the Architect's draft, and the Reviewer's critique to produce the final, definitive response to the user's question.
-    Ensure the answer is polished, incorporates the reviewer's feedback, and is highly accurate.
     
-    Analyst Summary:
-    {analysis}
-    
-    Architect Draft:
-    {draft}
-    
-    Reviewer Critique:
-    {critique}
-    
-    Final Question:
-    {question}
-    
-    Final Definitive Response:
-    """
+    if prompt_template:
+        # Augment the context with the deliberation history
+        refined_context = f"""
+Original Context:
+{context}
+
+---
+Expert Deliberation Logic:
+
+[Analyst Summary]:
+{analysis}
+
+[Architect Draft]:
+{draft}
+
+[Reviewer Critique]:
+{critique}
+---
+"""
+        # Ensure the template has the {context} and {question} placeholders
+        arbiter_prompt = prompt_template.format(context=refined_context, question=question)
+    else:
+        # Fallback to default if no template provided
+        arbiter_prompt = f"""
+        You are the Final Arbiter. Consider the Analyst's summary, the Architect's draft, and the Reviewer's critique to produce the final, definitive response to the user's question.
+        Ensure the answer is polished, incorporates the reviewer's feedback, and is highly accurate.
+        
+        Analyst Summary:
+        {analysis}
+        
+        Architect Draft:
+        {draft}
+        
+        Reviewer Critique:
+        {critique}
+        
+        Final Question:
+        {question}
+        
+        Final Definitive Response:
+        """
+        
     final_answer = ""
     for token in call_llm(arbiter_prompt, model=AGENTS["Arbiter"], stream=True):
         final_answer += token
