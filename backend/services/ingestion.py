@@ -131,10 +131,10 @@ def scrape_with_scrapy(url, max_depth=2):
     runner = CrawlerRunner(settings={
         'DEPTH_LIMIT': max_depth,
         'LOG_LEVEL': 'INFO',
-        'TWISTED_REACTOR': 'twisted.internet.epollreactor.EPollReactor',
         'ROBOTSTXT_OBEY': False,
         'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'CLOSESPIDER_PAGECOUNT': 100,
+        'TWISTED_REACTOR': 'twisted.internet.epollreactor.EPollReactor',
     })
     deferred = runner.crawl(IngestionSpider, url=url, max_depth=max_depth, results_list=results)
     deferred.addCallback(lambda _: results)

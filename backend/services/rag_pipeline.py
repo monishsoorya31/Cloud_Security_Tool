@@ -3,6 +3,7 @@ from services.llm import call_llm
 from services.deliberation import deliberate_answer
 from services.reasoning import build_context
 from services.query_expander import expand_query_for_security
+from services.validator import validate_provider_mismatch, is_query_relevant
 from django.conf import settings
 import json
 
@@ -56,8 +57,24 @@ def answer_query(question: str, provider: str | None = None, top_k: int = 5):
 
 def answer_query_stream(question: str, provider: str | None = None, top_k: int = 5):
     """Generator version of answer_query for streaming requests."""
+    # ✅ 0. Relevance Validation
+    if not is_query_relevant(question):
+        msg = "⚠️ I'm sorry, but your input doesn't seem to be a valid security-related question. Please ask something about cloud security, IAM, or policies."
+        yield json.dumps({"error": msg, "phase": "Validator", "status": "Filtered"}) + "\n"
+        return
+
+    # ✅ 1. Cross-Cloud Validation
+    if provider:
+        validation = validate_provider_mismatch(question, provider)
+        if validation["mismatch"]:
+            mismatched = ", ".join(validation["detected_providers"])
+            error_msg = f"❌ Error: Your question mentions {mismatched}, but you have selected {provider.upper()}. Please select the correct cloud provider and try again."
+            yield json.dumps({"phase": "Validator", "status": "Error", "content": error_msg}) + "\n"
+            return
+
     # expanded query for best retrieval
     expanded_query = expand_query_for_security(question, provider)
+
 
     # ✅ Semantic search
     retrieved_chunks = semantic_search(

@@ -28,7 +28,7 @@ vectordb = Chroma(
 # ================================
 # 4. Access underlying collection
 # ================================
-collection = vectordb._collection
+collection = vectordb.collection
 
 # Delete the current collection
 vectordb.delete_collection()
@@ -38,7 +38,6 @@ vectordb.delete_collection()
 # 5. Sanity checks
 # ================================
 print("Total vectors:", collection.count())
-print("AWS vectors:", collection.count(where={"provider": "aws"}))
 
 # ================================
 # 6. Inspect metadata (first 10)

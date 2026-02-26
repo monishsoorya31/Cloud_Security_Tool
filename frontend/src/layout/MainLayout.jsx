@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useState, useEffect, createContext, useContext } from "react";
+import api from "../api/axios";
 
 // ─── Theme Context ─────────────────────────────────────────────────────────────
 export const ThemeContext = createContext({ dark: true, toggle: () => { } });
@@ -71,6 +72,22 @@ export default function MainLayout() {
     return saved ? saved === "dark" : true;
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isOperational, setIsOperational] = useState(true);
+
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await api.get("health/");
+        setIsOperational(response.data.status === "ok");
+      } catch (error) {
+        setIsOperational(false);
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("cloudsec-theme", dark ? "dark" : "light");
@@ -206,9 +223,12 @@ export default function MainLayout() {
                 </span>
                 <ThemeToggle dark={dark} onToggle={toggle} />
               </div>
-              <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded-full border ${t("bg-emerald-950/60 border-emerald-800/50 text-emerald-400", "bg-emerald-50 border-emerald-200 text-emerald-700")}`}>
-                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                Systems Operational
+              <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded-full border ${isOperational
+                ? t("bg-emerald-950/60 border-emerald-800/50 text-emerald-400", "bg-emerald-50 border-emerald-200 text-emerald-700")
+                : t("bg-red-950/60 border-red-800/50 text-red-400", "bg-red-50 border-red-200 text-red-700")
+                }`}>
+                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isOperational ? "bg-emerald-400" : "bg-red-400"}`}></span>
+                {isOperational ? "Systems Operational" : "System Error"}
               </span>
             </div>
           </header>
