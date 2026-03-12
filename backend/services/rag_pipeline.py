@@ -86,16 +86,13 @@ def answer_query_stream(question: str, provider: str | None = None, top_k: int =
     # ✅ Keep only relevant chunks based on score
     good_chunks = [c for c in retrieved_chunks if c.get("score", 999) <= SIMILARITY_SCORE_THRESHOLD]
 
-    # ✅ If nothing relevant, return early
-    if not good_chunks:
-        msg = "⚠️ I couldn't find anything related to your question in the uploaded documents. Please ask a valid cloud/IAM/security-related question."
-        yield json.dumps({"error": msg}) + "\n"
-        return
+    # ✅ Handle case where nothing relevant is found
+    # We still allow the process to continue so a general Overview can be provided
+    # but we set a note for the agents and avoid crashing with the error.
+    context = build_context(good_chunks) if good_chunks else "NO_DOCUMENT_CONTEXT_AVAILABLE"
+    sources = [chunk["metadata"] for chunk in good_chunks] if good_chunks else []
 
-    context = build_context(good_chunks)
-    sources = [chunk["metadata"] for chunk in good_chunks]
-
-    # Yield metadata first
+    # Yield metadata first (may be empty)
     yield json.dumps({"phase": "Metadata", "sources": sources}) + "\n"
 
     # ✅ Multi-Agent Deliberation Flow

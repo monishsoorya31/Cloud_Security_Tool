@@ -1,6 +1,10 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, createContext, useContext } from "react";
 import api from "../api/axios";
+
+import RagPage from "../pages/RagPage";
+import PolicyPage from "../pages/PolicyPage";
+import KnowledgeBasePage from "../pages/KnowledgeBasePage";
 
 // ─── Theme Context ─────────────────────────────────────────────────────────────
 export const ThemeContext = createContext({ dark: true, toggle: () => { } });
@@ -19,11 +23,11 @@ const navItems = [
     badge: "AI",
   },
   {
-    to: "/ingest",
-    label: "Document Ingestion",
+    to: "/knowledge-base",
+    label: "Knowledge Base",
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.128 16.556 17.975 12 17.975s-8.25-1.847-8.25-4.125v-3.75m16.5 0v3.75" />
       </svg>
     ),
   },
@@ -73,6 +77,8 @@ export default function MainLayout() {
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isOperational, setIsOperational] = useState(true);
+
+  const location = useLocation();
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -235,7 +241,15 @@ export default function MainLayout() {
 
           {/* Page Content */}
           <main className={`flex-1 overflow-auto ${t("bg-gray-950", "bg-slate-50")}`}>
-            <Outlet context={{ dark }} />
+            <div style={{ display: location.pathname.includes('/rag') ? 'block' : 'none', height: '100%' }}>
+              <RagPage />
+            </div>
+            <div style={{ display: location.pathname.includes('/policies') ? 'block' : 'none', height: '100%' }}>
+              <PolicyPage />
+            </div>
+            <div style={{ display: location.pathname.includes('/knowledge-base') ? 'block' : 'none', height: '100%' }}>
+              <KnowledgeBasePage />
+            </div>
           </main>
         </div>
 

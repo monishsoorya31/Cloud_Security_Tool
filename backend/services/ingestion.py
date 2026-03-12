@@ -321,3 +321,26 @@ def ingest_document(title: str, url: str, provider: str, version: str = None):
     doc.save()
 
     print(f"✅ Ingested {len(valid_chunks)} chunks from {url}", flush=True)
+
+def delete_document(url: str):
+    """
+    Deletes a document from both the database and the vector store.
+    """
+    # 1. Delete from Vector Store
+    try:
+        vectorstore = get_vectorstore()
+        print(f"🧹 Deleting chunks for {url} from vector store...", flush=True)
+        vectorstore.delete(where={"source": url})
+    except Exception as e:
+        print(f"⚠️ Vector store deletion failed for {url}: {e}", flush=True)
+
+    # 2. Delete from Database
+    try:
+        deleted_count, _ = Document.objects.filter(source_url=url).delete()
+        if deleted_count > 0:
+            print(f"✅ Deleted document record for {url} from database.", flush=True)
+        else:
+            print(f"⚠️ No document record found for {url} in database.", flush=True)
+    except Exception as e:
+        print(f"❌ Database deletion failed for {url}: {e}", flush=True)
+        raise e

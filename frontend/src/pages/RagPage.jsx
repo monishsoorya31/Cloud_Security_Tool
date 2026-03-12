@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { downloadRagReport } from "../api/rag.api";
 import { useTheme } from "../layout/MainLayout"; // adjust path as needed
 
@@ -14,6 +14,7 @@ export default function RagPage() {
   const [error, setError] = useState("");
   const [deliberationLog, setDeliberationLog] = useState([]);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const abortControllerRef = useRef(null);
 
   // t(darkClass, lightClass) — inline theme helper
   const t = (d, l) => (dark ? d : l);
@@ -27,6 +28,10 @@ export default function RagPage() {
 
   const handleAsk = async () => {
     if (!query.trim()) return;
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setLoading(true);
     setError("");
     setResult(null);
@@ -36,6 +41,7 @@ export default function RagPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, provider, top_k: topK }),
+        signal: controller.signal,
       });
       if (!response.ok) throw new Error("Failed to fetch");
 
@@ -89,9 +95,20 @@ export default function RagPage() {
         }
       }
     } catch (err) {
-      setError("Failed to fetch response from AI");
+      if (err.name === "AbortError") {
+        setError("Generation stopped by user.");
+      } else {
+        setError("Failed to fetch response from AI");
+      }
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
   };
 
@@ -218,18 +235,29 @@ export default function RagPage() {
                   )}
                 </button>
 
-                {/* Ask AI */}
-                <button
-                  onClick={handleAsk}
-                  disabled={loading || !query.trim()}
-                  className={`flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all duration-200 shadow-md ${t("shadow-indigo-900/40", "shadow-indigo-200")}`}
-                >
-                  {loading ? (
-                    <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Deliberating...</>
-                  ) : (
-                    <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>Ask AI Advisor</>
-                  )}
-                </button>
+                {/* Ask AI / Stop button */}
+                {loading ? (
+                  <button
+                    onClick={handleStop}
+                    className={`flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-sm font-bold rounded-xl transition-all duration-200 shadow-md ${t("shadow-red-900/40", "shadow-red-200")}`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <rect x="6" y="6" width="12" height="12" rx="2" />
+                    </svg>
+                    Stop Deliberating
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleAsk}
+                    disabled={!query.trim()}
+                    className={`flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all duration-200 shadow-md ${t("shadow-indigo-900/40", "shadow-indigo-200")}`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                    </svg>
+                    Ask AI Advisor
+                  </button>
+                )}
               </div>
             </div>
           </div>

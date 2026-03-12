@@ -7,19 +7,18 @@ from services.Demo_Policy_funs.policy_explainer import explain_finding
 from services.Demo_Policy_funs.policy_fixer import generate_safe_policy
 from services.Demo_Policy_funs.policy_diff import diff_policies
 
-
 class PolicyAnalysisViewSet(ViewSet):
 
     def create(self, request):
         policy = request.data.get("policy")
         provider = request.data.get("provider", "aws")
-
+                                                                                                                                                   
         if not policy:
             return Response(
                 {"error": "policy JSON is required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+                                            
         # ✅ CRITICAL: Ensure policy is a dict, not a string
         if isinstance(policy, str):
             try:

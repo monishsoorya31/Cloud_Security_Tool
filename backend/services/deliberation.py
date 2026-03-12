@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 # Agent Roles and their assigned models
 AGENTS = {
     "Analyst": "qwen2.5:1.5b",
-    "Architect": "llama3.2:3b",
+    "Architect": "gemma2:2b",
     "Reviewer": "llama3.2:3b",  # Switched from phi3:mini for better stability
     "Arbiter": "llama3.2:3b"
 }
