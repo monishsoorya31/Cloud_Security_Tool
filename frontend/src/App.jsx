@@ -8,9 +8,10 @@ function App() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
 
-          {/* 👇 THIS was missing */}
-          <Route index element={<Navigate to="/rag" replace />} />
+          {/* Default redirect to dashboard */}
+          <Route index element={<Navigate to="/dashboard" replace />} />
 
+          <Route path="dashboard" element={<></>} />
           <Route path="rag" element={<></>} />
           <Route path="policies" element={<></>} />
           <Route path="knowledge-base" element={<></>} />

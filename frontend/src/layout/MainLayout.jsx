@@ -1,10 +1,11 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, Outlet } from "react-router-dom";
 import { useState, useEffect, createContext, useContext } from "react";
 import api from "../api/axios";
 
 import RagPage from "../pages/RagPage";
 import PolicyPage from "../pages/PolicyPage";
 import KnowledgeBasePage from "../pages/KnowledgeBasePage";
+import DashboardPage from "../pages/DashboardPage";
 
 // ─── Theme Context ─────────────────────────────────────────────────────────────
 export const ThemeContext = createContext({ dark: true, toggle: () => { } });
@@ -12,6 +13,15 @@ export const useTheme = () => useContext(ThemeContext);
 
 // ─── Nav Items ─────────────────────────────────────────────────────────────────
 const navItems = [
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+      </svg>
+    ),
+  },
   {
     to: "rag",
     label: "RAG Assistant",
@@ -240,16 +250,22 @@ export default function MainLayout() {
           </header>
 
           {/* Page Content */}
-          <main className={`flex-1 overflow-auto ${t("bg-gray-950", "bg-slate-50")}`}>
-            <div style={{ display: location.pathname.includes('/rag') ? 'block' : 'none', height: '100%' }}>
+          <main className={`flex-1 relative overflow-hidden ${t("bg-gray-950", "bg-slate-50")}`}>
+            <div className="absolute inset-0 overflow-y-auto flex-col" style={{ display: location.pathname.includes('/dashboard') ? 'flex' : 'none' }}>
+              <DashboardPage />
+            </div>
+            <div className="absolute inset-0 overflow-y-auto flex-col" style={{ display: location.pathname.includes('/rag') ? 'flex' : 'none' }}>
               <RagPage />
             </div>
-            <div style={{ display: location.pathname.includes('/policies') ? 'block' : 'none', height: '100%' }}>
+            <div className="absolute inset-0 overflow-y-auto flex-col" style={{ display: location.pathname.includes('/policies') ? 'flex' : 'none' }}>
               <PolicyPage />
             </div>
-            <div style={{ display: location.pathname.includes('/knowledge-base') ? 'block' : 'none', height: '100%' }}>
+            <div className="absolute inset-0 overflow-y-auto flex-col" style={{ display: location.pathname.includes('/knowledge-base') ? 'flex' : 'none' }}>
               <KnowledgeBasePage />
             </div>
+
+            {/* Render nested routes (which handles <Navigate> for root /) */}
+            <Outlet />
           </main>
         </div>
 
