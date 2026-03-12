@@ -5,9 +5,11 @@ A specialized Retrieval-Augmented Generation (RAG) tool designed for cloud secur
 ## 🚀 Key Features
 
 *   **Multi-Agent Deliberation**: Uses a council of specialized AI agents (Analyst, Architect, Reviewer, Arbiter) to refine answers.
+*   **Central Dashboard**: A unified landing page providing quick access to all major tools.
 *   **Real-Time Streaming**: Token-level streaming for both the agent deliberation transcript and the final synthesized response.
 *   **Full-Screen Agent Feed**: Inspect the detailed reasoning process of each agent with a dedicated full-screen view.
 *   **RAG Pipeline**: Ingests and indexes official cloud documentation using **ChromaDB** and **HuggingFace Embeddings**.
+*   **Policy Analyzer**: Dedicated tool to scan JSON policies for security risks and propose specific inline remediations.
 *   **Local LLM Support**: Fully compatible with **Ollama** (Llama 3.2, Qwen 2.5) for privacy and offline capability.
 *   **Modern UI**: React + Vite frontend with **Dark Mode** support and a responsive design.
 
@@ -92,21 +94,28 @@ npm run dev
 
 ## 📖 Usage Guide
 
-### 1. Ingest Documentation
-*   Navigate to the **Ingest** page.
-*   Enter a **Title** (e.g., "AWS IAM Guide") and the **URL** to the documentation.
-*   Select the **Provider** (AWS, GCP, Azure).
-*   Click **Start Ingestion**. The system will scrape, clean, chunk, and index the content into ChromaDB.
+### 1. Welcome Dashboard
+*   Start at the unified **Dashboard** (`/dashboard`) to get an overview of the tools and quickly navigate to the RAG Assistant, Knowledge Base, or Policy Analyzer.
 
-### 2. Ask a Question (RAG)
-*   Go to the **RAG / Chat** page.
+### 2. RAG Assistant
+*   Navigate to the **RAG Assistant** page.
 *   Select your target **Cloud Provider** and desired **Context Depth**.
 *   Type your security question (e.g., *"How do I secure an S3 bucket with public access blocked?"*).
 *   Watch the **Agent Protocol Feed** on the right sidebar as agents analyze, draft, critique, and finalize the answer.
 *   Click the **Expand** button in the sidebar to see the full deliberation transcript in full-screen mode.
 
-### 3. Policy Generator
-*   Use the **Policy** page to generate specific IAM policies or Terraform configurations based on prompts.
+### 3. Knowledge Base
+*   Navigate to the **Knowledge Base** page to manage indexed documentation.
+*   Enter a **Title** (e.g., "AWS IAM Guide") and the **URL** to the official documentation.
+*   Select the **Provider** (AWS, GCP, Azure).
+*   Click **Start Ingestion**. The system will recursively scrape, clean, chunk, and index the content into ChromaDB for the RAG Assistant to query against.
+
+### 4. Policy Analyzer
+*   Navigate to the **Policy Analyzer** page.
+*   Paste your raw IAM or bucket **Policy JSON** into the editor.
+*   Select the relevant **Cloud Provider**.
+*   Click **Analyze Policy** to detect misconfigurations, security vulnerabilities, and compliance issues.
+*   Review the generated risk level, detailed markdown findings, and a fully remediated JSON policy ready for deployment.
 
 ---
 
