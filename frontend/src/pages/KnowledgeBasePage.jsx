@@ -58,7 +58,8 @@ export default function KnowledgeBasePage() {
 
         } catch (err) {
             console.error(err);
-            setIngestStatus({ message: "", error: "Failed to start ingestion" });
+            const errorMsg = err.response?.data?.error || "Failed to start ingestion";
+            setIngestStatus({ message: "", error: errorMsg });
         } finally {
             setIngesting(false);
         }

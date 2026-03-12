@@ -236,7 +236,8 @@ def ingest_document(title: str, url: str, provider: str, version: str = None):
 
     if not raw_text:
         print(f"⚠️ No content fetched from {url}", flush=True)
-        return
+        raise ValueError("No content fetched from the provided URL. The page might be empty, requiring JavaScript, or blocking scrapers.")
+
 
     content_hash = generate_hash(raw_text)
     print(f"ℹ️ Generated hash {content_hash} for {len(raw_text)} chars from {url}", flush=True)
@@ -268,7 +269,8 @@ def ingest_document(title: str, url: str, provider: str, version: str = None):
 
     if not valid_chunks:
         print(f"⚠️ No useful chunks found for {url}", flush=True)
-        return
+        raise ValueError("No useful text chunks could be extracted from the content.")
+
 
       # 6️⃣ Embed (CLEANUP + BATCH INSERT)
     vectorstore = get_vectorstore()

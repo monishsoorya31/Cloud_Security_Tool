@@ -37,10 +37,16 @@ class DocumentViewSet(ViewSet):
             )
 
         #calling the ingest function 
-        ingest_document(title, url, provider, version)
+        try:
+            ingest_document(title, url, provider, version)
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         return Response(
-            {"message": "Document ingested it Would be Skipped if already exist"},
+            {"message": "Document ingested successfully or skipped if unchanged"},
             status=status.HTTP_201_CREATED
         )
 
