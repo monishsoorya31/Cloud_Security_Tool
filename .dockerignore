@@ -1,0 +1,26 @@
+# Exclude virtual environments
+**/venv/
+**/env/
+**/.venv/
+
+# Exclude Python cache
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Exclude databases and logs
+**/db.sqlite3
+**/*.log
+**/vectorstore/
+
+# Exclude frontend build artifacts if necessary
+**/node_modules/
+**/dist/
+
+# Exclude git
+.git
+.gitignore
+.dockerignore
+Jenkinsfile
+scripts/

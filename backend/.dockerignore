@@ -1,0 +1,19 @@
+# Exclude virtual environment
+venv/
+env/
+.venv/
+
+# Exclude Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Exclude local database and log files
+db.sqlite3
+*.log
+vectorstore/
+
+# Exclude git
+.git
+.gitignore
