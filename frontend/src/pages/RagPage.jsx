@@ -37,7 +37,7 @@ export default function RagPage() {
     setResult(null);
     setDeliberationLog([]);
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/rag/stream/", {
+      const response = await fetch("http://136.112.133.78/rag/stream/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, provider, top_k: topK }),
