@@ -15,25 +15,176 @@ def validate_provider_mismatch(question: str, selected_provider: str | None) -> 
     # Define provider keyword maps (expanded lists)
     provider_keywords = {
         "aws": [
-            "aws", "amazon", "s3", "lambda", "ec2", "cloudtrail", "dynamodb", "ebs", "vpc aws", 
-            "athena", "fargate", "cloudformation", "route53", "rds", "sqs", "sns", "kinesis", 
-            "eks", "redshift", "iam user", "security group", "elbv2", "alb", "nlb", 
-            "elasticache", "guardduty", "inspector", "macie", "shield", "waf", "sagemaker", 
-            "step functions", "iam role aws", "kms aws"
+            # Core
+            "aws", "amazon web services",
+
+            # Compute
+            "ec2", "elastic compute cloud", "lambda", "aws lambda",
+            "ecs", "eks", "fargate", "lightsail", "batch",
+
+            # Storage
+            "s3", "simple storage service", "ebs", "efs", "fsx",
+            "glacier", "storage gateway",
+
+            # Database
+            "rds", "aurora", "dynamodb", "redshift", "elasticache",
+            "neptune", "timestream", "ql", "keyspaces",
+
+            # Networking
+            "vpc aws", "route53", "cloudfront", "api gateway",
+            "direct connect", "global accelerator", "elastic load balancing",
+            "alb", "nlb", "elbv2",
+
+            # Security
+            "iam aws", "iam role aws", "cognito", "kms aws",
+            "secrets manager", "shield", "waf", "guardduty",
+            "inspector", "macie", "detective", "security hub",
+
+            # DevOps & Monitoring
+            "cloudwatch", "cloudtrail", "cloudformation",
+            "codedeploy", "codepipeline", "codebuild",
+            "x-ray", "opsworks", "systems manager",
+
+            # Analytics & Big Data
+            "athena", "kinesis", "glue", "emr",
+            "data pipeline", "lake formation",
+
+            # AI/ML
+            "sagemaker", "rekognition", "comprehend",
+            "lex", "polly", "textract", "transcribe", "translate",
+
+            # Messaging & Integration
+            "sqs", "sns", "eventbridge", "step functions",
+            "mq", "appsync",
+
+            # Migration & Transfer
+            "dms", "datasync", "snowball", "migration hub",
+
+            # Management
+            "organizations", "control tower", "trusted advisor",
+            "license manager", "service catalog"
         ],
+
         "gcp": [
-            "gcp", "google cloud", "cloud storage", "gcs", "compute engine", "bigquery", 
-            "org policy", "cloud run", "pub/sub", "spanner", "bigtable", "gke", 
-            "kubernetes engine", "cloud functions", "dataproc", "dataflow", "vpc google", 
-            "firestore", "app engine", "cloud sql", "stackdriver", "anthos", "apigee", 
-            "cloud armor", "cloud build", "iam gcp", "kms gcp"
+            # Core
+            "gcp", "google cloud", "google cloud platform",
+
+            # Compute
+            "compute engine", "gce", "app engine",
+            "cloud functions", "cloud run", "gke",
+            "kubernetes engine",
+
+            # Storage
+            "cloud storage", "gcs", "persistent disk",
+            "filestore", "archive storage",
+
+            # Database
+            "cloud sql", "spanner", "bigtable",
+            "firestore", "datastore", "alloydb",
+
+            # Networking
+            "vpc google", "cloud load balancing",
+            "cloud cdn", "cloud dns", "interconnect",
+            "cloud nat",
+
+            # Security
+            "iam gcp", "cloud iam", "kms gcp",
+            "secret manager", "identity aware proxy",
+            "cloud armor", "beyondcorp",
+
+            # DevOps & Monitoring
+            "cloud build", "cloud deploy",
+            "operations suite", "stackdriver",
+            "cloud logging", "cloud monitoring",
+            "error reporting", "trace",
+
+            # Analytics & Big Data
+            "bigquery", "dataflow", "dataproc",
+            "pub/sub", "composer", "dataplex",
+
+            # AI/ML
+            "vertex ai", "automl", "vision ai",
+            "speech to text", "text to speech",
+            "translation ai", "dialogflow",
+
+            # API & Integration
+            "apigee", "endpoints",
+
+            # Hybrid & Multi-cloud
+            "anthos",
+
+            # Migration
+            "migrate for compute engine",
+            "transfer service",
+
+            # Management
+            "resource manager", "org policy",
+            "cloud console"
         ],
+
         "azure": [
-            "azure", "blob storage", "virtual machine", "entra id", "active directory", 
-            "cosmos db", "app service", "aks", "synapse", "key vault", "application gateway", 
-            "azure function", "logic app", "sql database", "storage account", "sentinel", 
-            "blueprint", "traffic manager", "expressroute", "azure devops", "aks cluster", 
-            "azure monitor", "azure policy", "arm template"
+            # Core
+            "azure", "microsoft azure",
+
+            # Compute
+            "virtual machine", "vm azure",
+            "azure functions", "app service",
+            "aks", "azure kubernetes service",
+            "service fabric",
+
+            # Storage
+            "blob storage", "disk storage",
+            "file storage", "queue storage",
+            "storage account",
+
+            # Database
+            "sql database", "azure sql",
+            "cosmos db", "mysql azure",
+            "postgresql azure", "synapse",
+            "database for maria db",
+
+            # Networking
+            "virtual network", "vnet",
+            "application gateway",
+            "front door", "traffic manager",
+            "load balancer azure",
+            "expressroute", "vpn gateway",
+
+            # Security
+            "entra id", "azure active directory",
+            "aad", "key vault",
+            "defender for cloud",
+            "sentinel", "azure policy",
+
+            # DevOps & Monitoring
+            "azure devops", "monitor",
+            "log analytics", "application insights",
+            "automation account",
+
+            # Analytics & Big Data
+            "synapse analytics", "databricks",
+            "data factory", "stream analytics",
+
+            # AI/ML
+            "azure machine learning",
+            "cognitive services",
+            "bot service",
+            "openai service",
+
+            # Integration
+            "logic app", "service bus",
+            "event grid", "api management",
+
+            # Hybrid & Multi-cloud
+            "azure arc", "stack hub",
+
+            # Migration
+            "migrate", "site recovery",
+
+            # Management
+            "arm template", "blueprint",
+            "cost management",
+            "resource manager"
         ]
     }
 
@@ -80,7 +231,7 @@ def is_query_relevant(question: str) -> bool:
         "iam", "policy", "security", "cloud", "aws", "gcp", "azure", "access", 
         "role", "permission", "bucket", "s3", "storage", "compute", "network", 
         "firewall", "vpc", "audit", "log", "compliance", "identity", "token",
-        "secret", "key", "vault", "encrypt", "decrypt", "user", "group"
+        "secret", "key", "vault", "encrypt", "decrypt", "user", "group"  
     ]
 
     if len(q.split()) >= 2:

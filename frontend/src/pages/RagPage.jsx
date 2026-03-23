@@ -62,7 +62,7 @@ export default function RagPage() {
           if (!line.trim()) continue;
           const data = JSON.parse(line);
           if (data.error) { setError(data.error); break; }
-
+          console.log(data, 'dtat');
           if (data.phase === "Metadata") {
             setResult((prev) => ({ ...prev, sources: data.sources }));
           } else if (data.delta) {

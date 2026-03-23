@@ -135,7 +135,7 @@ STATIC_URL = 'static/'
 
 VECTOR_DB_PATH = os.getenv(
     "VECTOR_DB_PATH",
-    str(BASE_DIR / "vectorstore")
+    str(BASE_DIR / "../vectorstore")
 )
 OLLAMA_BASE_URL = os.getenv(
     "OLLAMA_BASE_URL",
@@ -144,7 +144,7 @@ OLLAMA_BASE_URL = os.getenv(
 
 LLM_MODEL = os.getenv(
     "LLM_MODEL",
-    "llama3.2"
+    "llama3.2:3b"
 )
 
 CSRF_TRUSTED_ORIGINS = [

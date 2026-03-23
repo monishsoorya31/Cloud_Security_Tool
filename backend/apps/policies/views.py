@@ -9,7 +9,7 @@ from services.Demo_Policy_funs.policy_diff import diff_policies
 
 class PolicyAnalysisViewSet(ViewSet):
 
-    def create(self, request):
+    def create(self, request): 
         policy = request.data.get("policy")
         provider = request.data.get("provider", "aws")
                                                                                                                                                    
@@ -18,7 +18,7 @@ class PolicyAnalysisViewSet(ViewSet):
                 {"error": "policy JSON is required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-                                            
+
         # ✅ CRITICAL: Ensure policy is a dict, not a string
         if isinstance(policy, str):
             try:

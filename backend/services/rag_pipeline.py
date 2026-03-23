@@ -77,20 +77,32 @@ def answer_query_stream(question: str, provider: str | None = None, top_k: int =
 
 
     # ✅ Semantic search
-    retrieved_chunks = semantic_search(
-        query=expanded_query,
-        provider=provider,
-        top_k=top_k
-    )
+    try:
+        retrieved_chunks = semantic_search(
+            query=expanded_query,
+            provider=provider,
+            top_k=top_k
+        )
+    except Exception as e:
+        error_msg = f"❌ Error: Database is completely empty. Please upload documents first."
+        yield json.dumps({"error": error_msg, "phase": "Retrieval", "status": "Error"}) + "\n"
+        return
+
+    if not retrieved_chunks:
+        error_msg = f"❌ Error: No documents found for {provider.upper()}. Please ensure you have uploaded documents for this provider."
+        yield json.dumps({"error": error_msg, "phase": "Retrieval", "status": "Error"}) + "\n"
+        return
 
     # ✅ Keep only relevant chunks based on score
     good_chunks = [c for c in retrieved_chunks if c.get("score", 999) <= SIMILARITY_SCORE_THRESHOLD]
 
-    # ✅ Handle case where nothing relevant is found
-    # We still allow the process to continue so a general Overview can be provided
-    # but we set a note for the agents and avoid crashing with the error.
-    context = build_context(good_chunks) if good_chunks else "NO_DOCUMENT_CONTEXT_AVAILABLE"
-    sources = [chunk["metadata"] for chunk in good_chunks] if good_chunks else []
+    if not good_chunks:
+        error_msg = f"❌ Error: No highly relevant documents found for {provider.upper()}. Please upload the relevant documentation."
+        yield json.dumps({"error": error_msg, "phase": "Retrieval", "status": "Error"}) + "\n"
+        return
+
+    context = build_context(good_chunks)
+    sources = [chunk["metadata"] for chunk in good_chunks]
 
     # Yield metadata first (may be empty)
     yield json.dumps({"phase": "Metadata", "sources": sources}) + "\n"

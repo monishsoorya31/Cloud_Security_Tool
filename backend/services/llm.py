@@ -28,7 +28,7 @@ def call_llm(prompt: str, temperature: float = 0.2, top_p: float = 0.9, model: s
         if stream:
             return _streaming_call_llm(url, payload)
         
-        response = requests.post(url, json=payload, timeout=400)
+        response = requests.post(url, json=payload, timeout=None)
         response.raise_for_status()
         return response.json()["response"]
     except requests.exceptions.RequestException as e:
@@ -39,7 +39,7 @@ def call_llm(prompt: str, temperature: float = 0.2, top_p: float = 0.9, model: s
 
 def _streaming_call_llm(url, payload):
     """Generator for streaming Ollama response."""
-    with requests.post(url, json=payload, stream=True, timeout=400) as response:
+    with requests.post(url, json=payload, stream=True, timeout=None) as response:
         response.raise_for_status()
         for line in response.iter_lines():
             if line:
