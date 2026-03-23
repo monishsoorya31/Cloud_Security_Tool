@@ -41,7 +41,7 @@ services:
 
   ollama:
     # Note: e400c209a686 is a local image ID. If this fails to pull on the GCP VM, change it to 'ollama/ollama' or the tag you built.
-    image: e400c209a686
+    image: ollama/ollama
     container_name: ollama
     ports:
       - "11434:11434"
