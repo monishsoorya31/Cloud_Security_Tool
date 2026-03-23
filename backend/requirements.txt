@@ -184,3 +184,5 @@ yarl
 zipp
 zope.interface
 zstandard
+psycopg2-binary
+psycopg
